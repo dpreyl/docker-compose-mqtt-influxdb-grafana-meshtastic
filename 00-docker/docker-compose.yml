@@ -13,22 +13,22 @@ services:
       - ${DATA_DIR}/mosquitto/log:/mosquitto/log
     restart: always
 
-  influxdb:
+  influxdbZS:
     image: influxdb:1.7
-    container_name: influxdb
+    container_name: influxdbZS
     ports:
-      - 8086:8086
+      - 9086:8086
     volumes:
       - ${DATA_DIR}/influxdb:/var/lib/influxdb
     restart: always
 
-  grafana:
-    image: grafana/grafana:5.4.3
-    container_name: grafana
+  grafanaZS:
+    image: grafana/grafana:latest
+    container_name: grafanaZS
     depends_on:
-      - influxdb
+      - influxdbZS
     ports:
-      - 3000:3000
+      - 9000:3000
     volumes:
       - ${DATA_DIR}/grafana:/var/lib/grafana
     restart: always
@@ -39,5 +39,18 @@ services:
     container_name: mqttbridge
     depends_on:
       - mosquitto
-      - influxdb
+      - influxdbZS
+    volumes:
+      - ${DATA_DIR}/nodedb:/nodedb
     restart: always
+ 
+  meshtasticbridge:
+    build: ../03-meshtastic
+    image: iothon/meshtasticbridge
+    container_name: meshtasticbridge
+    depends_on:
+      - mosquitto
+    devices:
+      - /dev/ttyACM0:/dev/ttyACM0
+    restart: always
+    

@@ -1,2 +1,4 @@
 influxdb==5.2.1
 paho-mqtt==1.4.0
+flask==2.2.5
+sqlalchemy==2.0.30
