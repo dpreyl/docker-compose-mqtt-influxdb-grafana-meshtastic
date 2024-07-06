@@ -75,9 +75,9 @@ def readConfig():
 
 def onMestasticDisconnect(interface):
     print("Reconnect to serial device")
-    interface.close()
+    #interface.close()
     time.sleep(0.1)
-    interface.connect()
+    #interface.connect()
 
     interface.waitForConfig()
     print("Reconnected")

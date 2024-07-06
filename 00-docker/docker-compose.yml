@@ -9,8 +9,8 @@ services:
     volumes:
       - ../01-mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf
       - ../01-mosquitto/users:/mosquitto/config/users
-      - ${DATA_DIR}/mosquitto/data:/mosquitto/data
-      - ${DATA_DIR}/mosquitto/log:/mosquitto/log
+      - mosquito_data:/mosquitto/data
+      - mosquito_log:/mosquitto/log
     restart: always
 
   influxdbZS:
@@ -19,18 +19,24 @@ services:
     ports:
       - 9086:8086
     volumes:
-      - ${DATA_DIR}/influxdb:/var/lib/influxdb
+      - influxdb_data:/var/lib/influxdb
     restart: always
 
   grafanaZS:
-    image: grafana/grafana:latest
+    build: ../05-grafana
+    image: iothon/grafana
+#    user: "65534:65534"
     container_name: grafanaZS
     depends_on:
       - influxdbZS
+      - prometheus
     ports:
       - 9000:3000
+    env_file:
+      - ../05-grafana/.env
     volumes:
-      - ${DATA_DIR}/grafana:/var/lib/grafana
+      - grafana_data:/var/lib/grafana
+#      - ../05-grafana/provisioning:/etc/grafana/provisioning
     restart: always
 
   mqttbridge:
@@ -41,7 +47,7 @@ services:
       - mosquitto
       - influxdbZS
     volumes:
-      - ${DATA_DIR}/nodedb:/nodedb
+      - mqttbridge_data:/nodedb
     restart: always
  
   meshtasticbridge:
@@ -54,3 +60,86 @@ services:
       - /dev/ttyACM0:/dev/ttyACM0
     restart: always
     
+  cadvisor:
+    container_name: monitoring-cadvisor
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    hostname: cadvisor
+    restart: unless-stopped
+    privileged: true
+    expose:
+      - 8080
+    command:
+      - '-housekeeping_interval=15s'
+      - '-docker_only=true'
+      - '-store_container_labels=false'
+    devices:
+      - /dev/kmsg
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+      - /etc/machine-id:/etc/machine-id:ro
+      
+  node-exporter:
+    container_name: monitoring-node-exporter
+    image: prom/node-exporter:latest
+    hostname: node-exporter
+    restart: unless-stopped
+    expose:
+      - 9100
+    command:
+      - --path.procfs=/host/proc
+      - --path.sysfs=/host/sys
+      - --path.rootfs=/host
+      - --collector.filesystem.ignored-mount-points
+      - ^/(sys|proc|dev|host|etc|rootfs/var/lib/docker/containers|rootfs/var/lib/docker/overlay2|rootfs/run/docker/netns|rootfs/var/lib/docker/aufs)($$|/)
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+      - /:/host:ro,rslave
+      
+#  telegraf:
+#    image: telegraf:latest
+#    container_name: telegraf
+#    volumes:
+#      - ../telegraf.conf:/etc/telegraf/telegraf.conf:ro
+#    environment:
+      # real influx host
+#      INFLUXDB_URI: "http://influxdbZS:8086"
+    
+  prometheus:
+    container_name: monitoring-prometheus
+    image: prom/prometheus:latest
+    hostname: prometheus
+    restart: unless-stopped
+#    user: "nobody"
+    user: "65534:65534"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=1y'
+      # /!\ Uncomment the following line to set a size limit for the Prometheus database /!\
+#      - '--storage.tsdb.retention.size=10GB'
+    expose:
+      - 9090
+    volumes:
+          # /!\ To be modified depending on your needs /!\
+      - prometheus_data:/prometheus
+      - ../04-prometheus:/etc/prometheus/
+    depends_on:
+      - cadvisor
+      - node-exporter
+    links:
+      - cadvisor:cadvisor
+      - node-exporter:node-exporter
+      
+volumes:
+  mosquito_data:
+  mosquito_log:
+  influxdb_data:
+  grafana_data:
+  mqttbridge_data:
+  prometheus_data:

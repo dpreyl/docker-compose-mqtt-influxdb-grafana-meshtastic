@@ -128,6 +128,7 @@ def _send_sensor_data_to_influxdb(sensor_data):
             json_message['tags']['longname'] = node_info_query.longname
             json_message['tags']['shortname'] = node_info_query.shortname
         else:
+            print("Not in nodeinfo, adress: {}".format(sensor_data['from']))
             continue
         if 'payload' in sensor_data:
             payload = copy.deepcopy(sensor_data['payload'])
