@@ -1,5 +1,5 @@
 #create a granafa image with custom configuration
-FROM grafana/grafana:latest
+FROM grafana/grafana:11.0.1
 
 ENV GF_AUTH_ANONYMOUS_ENABLED=true
 ENV GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
