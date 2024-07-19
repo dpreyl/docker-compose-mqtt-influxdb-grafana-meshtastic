@@ -18,6 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
+  "id": 1,
   "links": [],
   "panels": [
     {
@@ -137,7 +138,7 @@
           "zoom": 20.28
         }
       },
-      "pluginVersion": "11.1.0",
+      "pluginVersion": "11.0.1",
       "targets": [
         {
           "datasource": {
@@ -585,6 +586,7 @@
     "from": "now-6h",
     "to": "now"
   },
+  "timeRangeUpdatedDuringEditOrView": false,
   "timepicker": {
     "refresh_intervals": [
       "5s",
